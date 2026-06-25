@@ -687,5 +687,179 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
   });
 });
 </script>
+ <!-- ========== CHAT WIDGET - کپی این بخش به هر سایتی ========== -->
+<style>
+  #sms-chat-btn {
+    position: fixed;
+    bottom: 28px;
+    left: 28px;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+    box-shadow: 0 4px 20px rgba(37,211,102,0.55);
+    border: none;
+    cursor: pointer;
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 0;
+  }
+  #sms-chat-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 28px rgba(37,211,102,0.7);
+  }
+  #sms-chat-btn.active {
+    display: none;
+  }
+
+  #sms-chat-bar {
+    position: fixed;
+    bottom: 28px;
+    left: 28px;
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+    border-radius: 32px;
+    box-shadow: 0 4px 20px rgba(37,211,102,0.45);
+    z-index: 2147483647;
+    display: none;
+    align-items: center;
+    gap: 0;
+    overflow: hidden;
+    font-family: Tahoma, Arial, sans-serif;
+  }
+  #sms-chat-bar.visible { display: flex; }
+
+  .bar-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    padding: 0 14px;
+    font-size: 20px;
+    transition: background 0.15s;
+    white-space: nowrap;
+    gap: 7px;
+  }
+  .bar-btn:hover { background: rgba(255,255,255,0.18); }
+  .bar-btn span { font-size: 13px; font-weight: bold; letter-spacing: 0.01em; }
+  .bar-divider {
+    width: 1px;
+    height: 28px;
+    background: rgba(255,255,255,0.3);
+    flex-shrink: 0;
+  }
+  .bar-icon svg { width: 22px; height: 22px; display: block; }
+</style>
+
+<!-- دکمه شناور -->
+<button id="sms-chat-btn" onclick="openChat()" title="چت با ما" aria-label="باز کردن چت">
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+    <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="white"/>
+    <path d="M7 9H17M7 13H13" stroke="#25D366" stroke-width="1.8" stroke-linecap="round"/>
+  </svg>
+</button>
+
+<!-- نوار کنترل (بعد از باز شدن پنجره) -->
+<div id="sms-chat-bar">
+  <button class="bar-btn bar-icon" onclick="focusChat()" title="بازگشت به چت">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="white"/>
+      <path d="M7 9H17M7 13H13" stroke="#25D366" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <div class="bar-divider"></div>
+  <button class="bar-btn" onclick="toggleSize()" id="size-btn" title="تغییر اندازه">
+    <span id="size-label">🔲</span><span>تمام‌صفحه</span>
+  </button>
+  <div class="bar-divider"></div>
+  <button class="bar-btn" onclick="closeChat()" title="بستن">
+    ✕ <span>بستن</span>
+  </button>
+</div>
+
+<script>
+  const CHAT_URL = 'https://testai1223321.app.n8n.cloud/webhook/f08324a7-38eb-4f38-827d-a7de0ebeecf0/chat';
+  const POPUP_W = 420;
+  const POPUP_H = 600;
+  let chatWin = null;
+  let isFullscreen = false;
+
+  function openChat() {
+    spawnPopup(false);
+    document.getElementById('sms-chat-btn').classList.add('active');
+    document.getElementById('sms-chat-bar').classList.add('visible');
+  }
+
+  function spawnPopup(full) {
+    const sw = window.screen.width;
+    const sh = window.screen.height;
+    let features;
+    if (full) {
+      features = `width=${sw},height=${sh},left=0,top=0,resizable=yes,scrollbars=yes`;
+    } else {
+      const left = Math.round((sw - POPUP_W) / 2);
+      const top  = Math.round((sh - POPUP_H) / 2);
+      features = `width=${POPUP_W},height=${POPUP_H},left=${left},top=${top},resizable=yes,scrollbars=yes`;
+    }
+    if (chatWin && !chatWin.closed) {
+      chatWin.close();
+    }
+    chatWin = window.open(CHAT_URL, 'sms_chat_popup', features);
+    if (chatWin) chatWin.focus();
+    monitorWindow();
+  }
+
+  function focusChat() {
+    if (chatWin && !chatWin.closed) {
+      chatWin.focus();
+    } else {
+      spawnPopup(isFullscreen);
+    }
+  }
+
+  function toggleSize() {
+    isFullscreen = !isFullscreen;
+    const lbl = document.getElementById('size-label');
+    const txt = document.getElementById('size-btn').querySelector('span:last-child');
+    if (isFullscreen) {
+      lbl.textContent = '🔳';
+      txt.textContent = 'حالت کوچک';
+    } else {
+      lbl.textContent = '🔲';
+      txt.textContent = 'تمام‌صفحه';
+    }
+    spawnPopup(isFullscreen);
+  }
+
+  function closeChat() {
+    if (chatWin && !chatWin.closed) chatWin.close();
+    chatWin = null;
+    document.getElementById('sms-chat-btn').classList.remove('active');
+    document.getElementById('sms-chat-bar').classList.remove('visible');
+    isFullscreen = false;
+    document.getElementById('size-label').textContent = '🔲';
+    document.getElementById('size-btn').querySelector('span:last-child').textContent = 'تمام‌صفحه';
+  }
+
+  function monitorWindow() {
+    const timer = setInterval(() => {
+      if (!chatWin || chatWin.closed) {
+        clearInterval(timer);
+        document.getElementById('sms-chat-btn').classList.remove('active');
+        document.getElementById('sms-chat-bar').classList.remove('visible');
+        chatWin = null;
+        isFullscreen = false;
+      }
+    }, 600);
+  }
+</script>
+<!-- ========== پایان ویجت ========== -->
+
 </body>
 </html>
